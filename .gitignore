@@ -1,0 +1,6 @@
+bin/
+obj/
+
+aws-lambda-tools-defaults.json
+publish/
+pipeline-eventhandler-slack.zip

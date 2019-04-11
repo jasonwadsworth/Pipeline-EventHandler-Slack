@@ -1,0 +1,156 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Pipeline EventHandler Slack Lambda",
+    "Parameters": {
+        "BucketName": {
+            "Type": "String"
+        },
+        "ObjectKey": {
+            "Type": "String"
+        },
+        "Environment": {
+            "Type": "String"
+        },
+        "TagList": {
+            "Type": "String",
+            "Description": "A comma separated list of people to tag when the events occur",
+            "Default": ""
+        },
+        "WebhookUrl": {
+            "Type": "String",
+            "Description": "The webhook URL for posting messages to Slack"
+        },
+        "PipelineEventTypes": {
+            "Type": "String",
+            "Description": "A comma separated list of the CodePipeline event types you want to be notified of",
+            "Default": "CodePipeline Stage Execution State Change"
+        },
+        "PipelineEventStates": {
+            "Type": "String",
+            "Description": "A comma separated list of the CodePipeline event states (CANCELED, RESUMED, STARTED, SUCCEEDED, SUPERSEDED, FAILED) you want to be notified of",
+            "Default": "FAILED"
+        }
+    },
+    "Resources": {
+        "HandlerFunction": {
+            "Type": "AWS::Lambda::Function",
+            "Properties": {
+                "Description": "Lambda function to handle CodePipeline events for Slack",
+                "FunctionName": "Pipeline-EventHandler-Slack",
+                "Code": {
+                    "S3Bucket": {
+                        "Ref": "BucketName"
+                    },
+                    "S3Key": {
+                        "Ref": "ObjectKey"
+                    }
+                },
+                "Handler": "JasonWadsworth.Pipeline.EventHandler.Slack::JasonWadsworth.Pipeline.EventHandler.Slack.Function::FunctionHandler",
+                "Runtime": "dotnetcore2.1",
+                "MemorySize": 128,
+                "Timeout": 15,
+                "Role": {
+                    "Fn::GetAtt": [
+                        "HandlerRole",
+                        "Arn"
+                    ]
+                },
+                "Environment": {
+                    "Variables": {
+                        "Environment": {
+                            "Ref": "Environment"
+                        },
+                        "Pipeline__EventHandler__Slack__TagList": {
+                            "Ref": "TagList"
+                        },
+                        "Pipeline__EventHandler__Slack__WebhookUrl": {
+                            "Ref": "WebhookUrl"
+                        }
+                    }
+                }
+            }
+        },
+        "HandlerRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "RoleName": {
+                    "Fn::Sub": "Pipeline-EventHandler-Slack-${AWS::Region}"
+                },
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "lambda.amazonaws.com"
+                            },
+                            "Action": [
+                                "sts:AssumeRole"
+                            ]
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+                ]
+            }
+        },
+        "Event": {
+            "Type": "AWS::Events::Rule",
+            "Properties": {
+                "Description": "Error events from all CodePipelines",
+                "EventPattern": {
+                    "source": [
+                        "aws.codepipeline"
+                    ],
+                    "detail-type": {
+                        "Fn::Split": [
+                            ",",
+                            {
+                                "Ref": "PipelineEventTypes"
+                            }
+                        ]
+                    },
+                    "detail": {
+                        "state": {
+                            "Fn::Split": [
+                                ",",
+                                {
+                                    "Ref": "PipelineEventStates"
+                                }
+                            ]
+                        }
+                    }
+                },
+                "Name": "CodePipelineErrorEvents",
+                "Targets": [
+                    {
+                        "Arn": {
+                            "Fn::GetAtt": [
+                                "HandlerFunction",
+                                "Arn"
+                            ]
+                        },
+                        "Id": "Pipeline-EventHandler-Slack"
+                    }
+                ]
+            }
+        },
+        "LambdaPermissions": {
+            "Type": "AWS::Lambda::Permission",
+            "Properties": {
+                "Action": "lambda:InvokeFunction",
+                "FunctionName": {
+                    "Ref": "HandlerFunction"
+                },
+                "Principal": "events.amazonaws.com",
+                "SourceArn": {
+                    "Fn::GetAtt": [
+                        "Event",
+                        "Arn"
+                    ]
+                }
+            }
+        }
+    }
+}
