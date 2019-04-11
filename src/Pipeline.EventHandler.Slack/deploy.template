@@ -8,9 +8,6 @@
         "ObjectKey": {
             "Type": "String"
         },
-        "Environment": {
-            "Type": "String"
-        },
         "TagList": {
             "Type": "String",
             "Description": "A comma separated list of people to tag when the events occur",
@@ -57,9 +54,6 @@
                 },
                 "Environment": {
                     "Variables": {
-                        "Environment": {
-                            "Ref": "Environment"
-                        },
                         "Pipeline__EventHandler__Slack__TagList": {
                             "Ref": "TagList"
                         },

@@ -23,8 +23,6 @@ namespace JasonWadsworth.Pipeline.EventHandler.Slack
     {
         private readonly Microsoft.Extensions.Logging.ILogger logger;
 
-        private readonly string environment;
-
         private readonly string webhookUrl;
 
         private readonly IEnumerable<string> tags;
@@ -37,7 +35,6 @@ namespace JasonWadsworth.Pipeline.EventHandler.Slack
                 .AddEnvironmentVariables()
                 .Build();
 
-            environment = configuration["Environment"];
             webhookUrl = configuration["Pipeline:EventHandler:Slack:WebhookUrl"];
             var tagList = configuration["Pipeline:EventHandler:Slack:TagList"];
             if (!string.IsNullOrEmpty(tagList))
@@ -83,7 +80,7 @@ namespace JasonWadsworth.Pipeline.EventHandler.Slack
                 Blocks = new object[]
                 {
                     new { Type = "divider" },
-                    new { Type = "section", Text = new { Type = "mrkdwn", Text = $"*{input.Detail.Pipeline} Pipeline Update in {environment}*\n\n<{pipelineUrl}|Click for Details>" } },
+                    new { Type = "section", Text = new { Type = "mrkdwn", Text = $"*{input.Detail.Pipeline} Pipeline Update in {input.Account}*\n\n<{pipelineUrl}|Click for Details>" } },
                     new { Type = "section", Text = new { Type = "mrkdwn", Text = string.Join(' ', tags.Select(t => $"<{t}>")) } },
                     new { Type = "section", Fields = new object[]
                     {
