@@ -81,7 +81,7 @@ namespace JasonWadsworth.Pipeline.EventHandler.Slack
                 {
                     new { Type = "divider" },
                     new { Type = "section", Text = new { Type = "mrkdwn", Text = $"*{input.Detail.Pipeline} Pipeline Update in {input.Account}*\n\n<{pipelineUrl}|Click for Details>" } },
-                    new { Type = "section", Text = new { Type = "mrkdwn", Text = string.Join(' ', tags.Select(t => $"<{t}>")) } },
+                    new { Type = "section", Text = new { Type = "mrkdwn", Text = tags.Count() == 0 ? "No Tags" : string.Join(' ', tags.Select(t => $"<{t}>")) } },
                     new { Type = "section", Fields = new object[]
                     {
                         new { Type = "mrkdwn", Text = $"*State*\n{input.Detail.State}" },
